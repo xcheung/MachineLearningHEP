@@ -91,8 +91,7 @@ LctopK0sPbPbCen010:
     mlplot: mlplot010
     mlout: mlout010
     pkl_out:
-      data: [/data2/HeavyFlavour/PbPb_data_010/24-04-2019/423_20190416-2158/pickleLctopK0s_presel, 
-             /data2/HeavyFlavour/PbPb_data_010/24-04-2019/422_20190416-2157/pickleLctopK0s_presel]
+      data: [files, files]
       mc: [/data2/HeavyFlavour/PbPb_MC_010/27-04-2019/430_20190425-1033/pickleLctopK0s_presel,
            /data2/HeavyFlavour/PbPb_MC_010/27-04-2019/431_20190425-1000/pickleLctopK0s_presel,
            /data2/HeavyFlavour/PbPb_MC_010/27-04-2019/432_20190425-1133/pickleLctopK0s_presel,
@@ -246,15 +245,13 @@ LctopK0sPbPbCen3050:
     mlplot: mlplot3050
     mlout: mlout3050
     pkl_out:
-      data: [/data2/HeavyFlavour/PbPb_data_3050/24-04-2019/420_20190416-2232/pickleLctopK0s,
-             /data2/HeavyFlavour/PbPb_data_3050/24-04-2019/421_20190416-2157/pickleLctopK0s]
+      data: [files, files]
       mc: [/data2/HeavyFlavour/PbPb_MC_3050/27-04-2019/434_20190425-1115/pickleLctopK0s,
            /data2/HeavyFlavour/PbPb_MC_3050/27-04-2019/435_20190425-1115/pickleLctopK0s,
            /data2/HeavyFlavour/PbPb_MC_3050/27-04-2019/436_20190425-1149/pickleLctopK0s,
            /data2/HeavyFlavour/PbPb_MC_3050/27-04-2019/437_20190425-1114/pickleLctopK0s]
     pkl_skimmed:
-      data: [/data2/HeavyFlavour/PbPb_data_3050/24-04-2019/420_20190416-2232/pickleLctopK0sskimmed4up,
-             /data2/HeavyFlavour/PbPb_data_3050/24-04-2019/421_20190416-2157/pickleLctopK0sskimmed4up]
+      data: [filesout, filesout]
       mc: [/data2/HeavyFlavour/PbPb_MC_3050/27-04-2019/434_20190425-1115/pickleLctopK0sskimmed4up,
            /data2/HeavyFlavour/PbPb_MC_3050/27-04-2019/435_20190425-1115/pickleLctopK0sskimmed4up,
            /data2/HeavyFlavour/PbPb_MC_3050/27-04-2019/436_20190425-1149/pickleLctopK0sskimmed4up,
