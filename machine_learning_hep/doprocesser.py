@@ -17,6 +17,6 @@ indexp = 0
 case = data_config["case"]
 param_case = data_param[case]
 
-myprocess = Processer(data_param[case], mcordata, indexp, 10)
+myprocess = processer(data_param[case], mcordata, indexp, 10)
 myprocess.activate_unpack()
 myprocess.run()
