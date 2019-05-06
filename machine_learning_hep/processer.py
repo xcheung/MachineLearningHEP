@@ -1,10 +1,26 @@
-import yaml
-import pickle
-import multiprocessing as mp
-import uproot
+#############################################################################
+##  © Copyright CERN 2018. All rights not expressly granted are reserved.  ##
+##                 Author: Gian.Michele.Innocenti@cern.ch                  ##
+## This program is free software: you can redistribute it and/or modify it ##
+##  under the terms of the GNU General Public License as published by the  ##
+## Free Software Foundation, either version 3 of the License, or (at your  ##
+## option) any later version. This program is distributed in the hope that ##
+##  it will be useful, but WITHOUT ANY WARRANTY; without even the implied  ##
+##     warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    ##
+##           See the GNU General Public License for more details.          ##
+##    You should have received a copy of the GNU General Public License    ##
+##   along with this program. if not, see <https://www.gnu.org/licenses/>. ##
+#############################################################################
+
+"""
+main script for doing data processing, machine learning and analysis
+"""
 import os
-   ##
-class Processer:
+import multiprocessing as mp
+import pickle
+import uproot
+
+class Processer: # pylint: disable=too-many-instance-attributes
     # Class Attribute
     species = 'processer'
 
@@ -80,12 +96,16 @@ class Processer:
         self.maxperchunk = maxperchunk
 
     def buildlistpkl(self):
-        self.l_root, self.l_reco = self.list_files_dir_lev2(self.d_root, self.d_reco, self.n_root, self.n_reco)
-        _, self.l_gen = self.list_files_dir_lev2(self.d_root, self.d_gen, self.n_root, self.n_gen)
-        _, self.l_evt = self.list_files_dir_lev2(self.d_root, self.d_evt, self.n_root, self.n_evt)
+        self.l_root, self.l_reco = self.list_files_dir_lev2(self.d_root, \
+                                        self.d_reco, self.n_root, self.n_reco)
+        _, self.l_gen = self.list_files_dir_lev2(self.d_root, self.d_gen, \
+                                        self.n_root, self.n_gen)
+        _, self.l_evt = self.list_files_dir_lev2(self.d_root, self.d_evt, \
+                                                 self.n_root, self.n_evt)
 
     def buildlistskim(self):
-        _, self.l_recosk = list_files_dir_lev2(self.d_reco, self.d_recosk, self.n_reco, self.n_recosk)
+        _, self.l_recosk = self.list_files_dir_lev2(self.d_reco, self.d_recosk, \
+                                               self.n_reco, self.n_recosk)
 
     def unpack_module(self, filein, fileout, treename, varlist, selection):
         tree = uproot.open(filein)[treename]
@@ -95,10 +115,13 @@ class Processer:
         df.to_pickle(fileout)
 
     def unpack(self, file_index):
-        self.unpack_module(self.l_root[file_index], self.l_reco[file_index], self.n_treereco, self.v_all, self.s_reco_unp)
-        self.unpack_module(self.l_root[file_index], self.l_evt[file_index], self.n_treeevt, self.v_evt, self.s_evt_unp)
-        if (self.mcordata == "mc"):
-            self.unpack_module(self.l_root[file_index], self.l_gen[file_index], self.n_treegen, self.v_gen, self.s_gen_unp)
+        self.unpack_module(self.l_root[file_index], self.l_reco[file_index], \
+                           self.n_treereco, self.v_all, self.s_reco_unp)
+        self.unpack_module(self.l_root[file_index], self.l_evt[file_index], \
+                           self.n_treeevt, self.v_evt, self.s_evt_unp)
+        if self.mcordata == "mc":
+            self.unpack_module(self.l_root[file_index], self.l_gen[file_index], \
+                               self.n_treegen, self.v_gen, self.s_gen_unp)
 
     def skim(self, filein, fileout):
         df = pickle.load(open(filein, "rb"))
@@ -106,10 +129,11 @@ class Processer:
         df.to_pickle(fileout)
 
     def parallelizer(self, function, argument_list):
-        chunks = [argument_list[x:x+self.maxperchunk] for x in range(0, len(argument_list), self.maxperchunk)]
+        chunks = [argument_list[x:x+self.maxperchunk] \
+                  for x in range(0, len(argument_list), self.maxperchunk)]
         for chunk in chunks:
             pool = mp.Pool(self.maxprocess)
-            _ = [pool.apply(function,args=chunk[i]) for i in range(len(chunk))]
+            _ = [pool.apply(function, args=chunk[i]) for i in range(len(chunk))]
             pool.close()
 
     def unpackparallel(self):
@@ -155,4 +179,3 @@ class Processer:
 #     def skimmer(self):
 #         arguments = [(self.l_pkl[i], self.l_pklsk[i]) for i in range(len(self.l_pklsk))]
 #         self.parallelizer(self.skim, arguments)
-
