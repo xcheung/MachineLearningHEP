@@ -24,12 +24,14 @@ def doprocesser():
         data_config = yaml.load(run_config)
     with open("data/database_ml_parameters.yml", 'r') as param_config:
         data_param = yaml.load(param_config)
+    with open("data/database_run_list.yml", 'r') as runlist_config:
+              run_param = yaml.load(runlist_config)
     mcordata = "data"
 
     indexp = 0
     case = data_config["case"]
 
-    myprocess = Processer(data_param[case], mcordata, indexp, 10)
+    myprocess = Processer(data_param[case], run_param, mcordata, indexp, 10)
     myprocess.activate_unpack()
     myprocess.run()
 

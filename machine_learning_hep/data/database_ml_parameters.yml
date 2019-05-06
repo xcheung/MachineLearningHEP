@@ -19,16 +19,13 @@ LctopK0sPbPbCen3050:
   pdg_code: null
   mass_fit_lim: [2.14, 2.48] # region for the fit of the invariant mass distribution [GeV/c^2]
   bin_width: 0.001 # bin width of the invariant mass histogram
-  presel_reco: "abs(eta_prong0)<0.8 and abs(eta_prong1)<0.8 and abs(eta_prong2)<0.8"
-  presel_gen: "abs(y_cand) < 0.5 and abs(z_vtx_gen) < 10" # pre-selections on generated candidates
-  skimming_sel: "pt_cand>4"
-  skimming_sel_gen: "pt_cand>4"
-  skimming_sel_evt: null
-  skimming2_sel: "pt_cand>4"
-  skimming2_sel_gen: "pt_cand>4 & abs(z_vtx_gen)<10"
+  skimming_sel: "pt_cand>4 & abs(eta_prong0)<0.8 and abs(eta_prong1)<0.8 and abs(eta_prong2)<0.8"
+  skimming_sel_gen: "pt_cand>4 && abs(y_cand) < 0.5 && abs(z_vtx_gen)<10"
+  skimming_sel_evt: "centrality >=30 & centrality <50"
+  skimming2_sel: null
+  skimming2_sel_gen: null
   skimming2_sel_evt: null
   skimming2_dotrackpid: True
-  sel_cent: "centrality >=30 & centrality <50"
 
   old_sel:
     use: False # Obsolete selection method not implemented, see Ds as a reference
@@ -123,9 +120,12 @@ LctopK0sPbPbCen3050:
               inv_mass, pt_cand, inv_mass_K0s, pt_K0s, cand_type, y_cand, eta_prong0, eta_prong1, eta_prong2,
               run_number, ev_id, nsigTPC_Pr_0, nsigTOF_Pi_0, nsigTOF_Pr_0, nsigTPC_Pi_1, nsigTPC_Pr_1,
               nsigTOF_Pi_1, nsigTOF_Pr_1, nsigTPC_Pi_2, nsigTPC_Pr_2, nsigTOF_Pi_2, nsigTOF_Pr_2]
+    var_derived:
+      mc: [mcsignal_on_off, mcsignal_prompt_on_off, mcsignal_feed_on_off, mcbkg_on_off, preseltrack_pid_on_off, std_analysis_on_off]
+      data: [preseltrack_pid_on_off, std_analysis_on_off]
     var_evt:
-      data: [is_ev_rej, run_number, ev_id, n_tracks, centrality, n_tracklets, V0Amult, z_vtx_reco ]
-      mc: [is_ev_rej, run_number, ev_id, n_tracks, centrality, n_tracklets, V0Amult, z_vtx_reco, z_vtx_gen]
+      data: [is_ev_rej, run_number, ev_id, n_tracks, centrality, n_tracklets, V0Amult, z_vtx_reco]
+      mc: [is_ev_rej, run_number, ev_id, centrality, z_vtx_reco, z_vtx_gen]
     var_gen: [y_cand, pt_cand, cand_type, run_number, ev_id]
     var_training: [cos_t_star, signd0, dca_K0s, imp_par_K0s, d_len_K0s, armenteros_K0s, ctau_K0s, cos_p_K0s, 
                    imp_par_prong0, imp_par_prong1, imp_par_prong2, inv_mass_K0s, nsigTOF_Pr_0, nsigTPC_Pr_0]

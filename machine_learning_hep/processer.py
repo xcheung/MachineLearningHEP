@@ -25,8 +25,9 @@ class Processer: # pylint: disable=too-many-instance-attributes
     species = 'processer'
 
     # Initializer / Instance Attributes
-    def __init__(self, datap, mcordata, indexp, maxfiles):
+    def __init__(self, datap, run_param, mcordata, indexp, maxfiles):
 
+        self.datap = datap
         self.mcordata = mcordata
         self.index_period = indexp
         self.maxfiles = maxfiles
@@ -50,12 +51,8 @@ class Processer: # pylint: disable=too-many-instance-attributes
 
         #directories
         self.d_root = datap["inputs"][self.mcordata]["unmerged_tree_dir"][self.index_period]
-        self.d_reco = datap["output_folders"]["pkl_out"][self.mcordata][self.index_period]
-        self.d_evt = self.d_reco
-        self.d_gen = self.d_reco
-        self.d_recosk = datap["output_folders"]["pkl_skimmed"][self.mcordata][self.index_period]
-        self.d_evtsk = self.d_recosk
-        self.d_recosk = self.d_recosk
+        self.d_pkl = datap["output_folders"]["pkl_out"][self.mcordata][self.index_period]
+        self.d_pklsk = datap["output_folders"]["pkl_skimmed"][self.mcordata][self.index_period]
 
         #selections
         self.s_reco_unp = datap["skimming_sel"]
@@ -65,7 +62,6 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.s_evt_skim = datap["skimming2_sel_evt"]
         self.s_gen_skim = datap["skimming2_sel_gen"]
         self.s_reco_trackpid = datap["skimming2_dotrackpid"]
-        self.s_centr = datap["sel_cent"]
 
         #variables name
         self.v_all = datap["variables"]["var_all"]
@@ -88,6 +84,7 @@ class Processer: # pylint: disable=too-many-instance-attributes
         #activators
         self.activateunpack = False
 
+        print(run_param)
     def activate_unpack(self):
         self.activateunpack = True
         print("Unpacker activated")
@@ -97,29 +94,63 @@ class Processer: # pylint: disable=too-many-instance-attributes
 
     def buildlistpkl(self):
         self.l_root, self.l_reco = list_files_dir_lev2(self.d_root, \
-                                        self.d_reco, self.n_root, self.n_reco)
-        _, self.l_gen = list_files_dir_lev2(self.d_root, self.d_gen, \
+                                        self.d_pkl, self.n_root, self.n_reco)
+        _, self.l_gen = list_files_dir_lev2(self.d_root, self.d_pkl, \
                                         self.n_root, self.n_gen)
-        _, self.l_evt = list_files_dir_lev2(self.d_root, self.d_evt, \
+        _, self.l_evt = list_files_dir_lev2(self.d_root, self.d_pkl, \
                                                  self.n_root, self.n_evt)
 
-    def buildlistskim(self):
-        _, self.l_recosk = list_files_dir_lev2(self.d_reco, self.d_recosk, \
+    def buildlistpklskim(self):
+        _, self.l_recosk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
                                                self.n_reco, self.n_recosk)
+        _, self.l_gensk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
+                                               self.n_gen, self.n_gensk)
+        _, self.l_evtsk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
+                                               self.n_evt, self.n_evtsk)
 
     def unpack(self, file_index):
-        self.unpack_module(self.l_root[file_index], self.l_reco[file_index], \
-                           self.n_treereco, self.v_all, self.s_reco_unp)
-        self.unpack_module(self.l_root[file_index], self.l_evt[file_index], \
-                           self.n_treeevt, self.v_evt, self.s_evt_unp)
-        if self.mcordata == "mc":
-            self.unpack_module(self.l_root[file_index], self.l_gen[file_index], \
-                               self.n_treegen, self.v_gen, self.s_gen_unp)
+        treereco = uproot.open(self.l_root[file_index])[self.n_treereco]
+        dfreco = treereco.pandas.df(branches=self.v_all)
+        if self.s_reco_unp is not None:
+            dfreco = dfreco.query(self.s_reco_unp)
+        dfreco.to_pickle(self.l_reco[file_index])
 
-    def skim(self, filein, fileout):
-        df = pickle.load(open(filein, "rb"))
+        treeevt = uproot.open(self.l_root[file_index])[self.n_treeevt]
+        dfevt = treeevt.pandas.df(branches=self.v_evt)
+        if self.s_evt_unp is not None:
+            dfevt = dfevt.query(self.s_evt_unp)
+        dfevt.to_pickle(self.l_evt[file_index])
+
+        if self.mcordata == "mc":
+            treegen = uproot.open(self.l_root[file_index])[self.n_treegen]
+            dfgen = treegen.pandas.df(branches=self.v_gen)
+            if self.s_gen_unp is not None:
+                dfgen = dfgen.query(self.s_gen_unp)
+            dfgen.to_pickle(self.l_gen[file_index])
+
+
+#    def unpack(self, file_index):
+#        self.unpack_module(self.l_root[file_index], self.l_reco[file_index], \
+#                           self.n_treereco, self.v_all, self.s_reco_unp)
+#        self.unpack_module(self.l_root[file_index], self.l_evt[file_index], \
+#                           self.n_treeevt, self.v_evt, self.s_evt_unp)
+#        if self.mcordata == "mc":
+#            self.unpack_module(self.l_root[file_index], self.l_gen[file_index], \
+#                               self.n_treegen, self.v_gen, self.s_gen_unp)
+
+    def skim(self, file_index):
+        df = pickle.load(open(self.l_reco[file_index], "rb"))
         df = df.query(self.s_reco_skim)
-        df.to_pickle(fileout)
+        df.to_pickle(self.l_recosk[file_index])
+
+        dfevt = pickle.load(open(self.l_evt[file_index], "rb"))
+        dfevt = df.query(self.s_evt_skim)
+        dfevt.to_pickle(self.l_evtsk[file_index])
+
+        if self.mcordata == "mc":
+            dfgen = pickle.load(open(self.l_gen[file_index], "rb"))
+            dfgen = df.query(self.s_gen_skim)
+            dfgen.to_pickle(self.l_gensk[file_index])
 
     def parallelizer(self, function, argument_list):
         chunks = [argument_list[x:x+self.maxperchunk] \
@@ -134,19 +165,20 @@ class Processer: # pylint: disable=too-many-instance-attributes
         arguments = [(i,) for i in range(len(self.l_root))]
         self.parallelizer(self.unpack, arguments)
 
+    def skimparallel(self):
+        self.buildlistpklskim()
+        arguments = [(i,) for i in range(len(self.l_reco))]
+        self.parallelizer(self.skim, arguments)
+
     def run(self):
         print(self.activateunpack)
         if self.activateunpack:
             self.unpackparallel()
 
-    @staticmethod
-    def unpack_module(filein, fileout, treename, varlist, selection):
-        tree = uproot.open(filein)[treename]
-        df = tree.pandas.df(branches=varlist)
-        if selection is not None:
-            df = df.query(selection)
-        df.to_pickle(fileout)
-
-#     def skimmer(self):
-#         arguments = [(self.l_pkl[i], self.l_pklsk[i]) for i in range(len(self.l_pklsk))]
-#         self.parallelizer(self.skim, arguments)
+#    @staticmethod
+#    def unpack_module(filein, fileout, treename, varlist, selection):
+#        tree = uproot.open(filein)[treename]
+#        df = tree.pandas.df(branches=varlist)
+#        if selection is not None:
+#            df = df.query(selection)
+#        df.to_pickle(fileout)
