@@ -16,7 +16,7 @@
 main script for doing data processing, machine learning and analysis
 """
 import yaml
-from processer import processer  # pylint: disable=import-error
+from processer import Processer  # pylint: disable=import-error
 
 def doprocesser():
 
@@ -29,7 +29,7 @@ def doprocesser():
     indexp = 0
     case = data_config["case"]
 
-    myprocess = processer(data_param[case], mcordata, indexp, 10)
+    myprocess = Processer(data_param[case], mcordata, indexp, 10)
     myprocess.activate_unpack()
     myprocess.run()
 

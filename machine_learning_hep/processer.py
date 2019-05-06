@@ -15,10 +15,10 @@
 """
 main script for doing data processing, machine learning and analysis
 """
-import os
 import multiprocessing as mp
 import pickle
 import uproot
+from machine_learning_hep.listfiles import list_files_dir_lev2
 
 class Processer: # pylint: disable=too-many-instance-attributes
     # Class Attribute
@@ -96,23 +96,16 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.maxperchunk = maxperchunk
 
     def buildlistpkl(self):
-        self.l_root, self.l_reco = self.list_files_dir_lev2(self.d_root, \
+        self.l_root, self.l_reco = list_files_dir_lev2(self.d_root, \
                                         self.d_reco, self.n_root, self.n_reco)
-        _, self.l_gen = self.list_files_dir_lev2(self.d_root, self.d_gen, \
+        _, self.l_gen = list_files_dir_lev2(self.d_root, self.d_gen, \
                                         self.n_root, self.n_gen)
-        _, self.l_evt = self.list_files_dir_lev2(self.d_root, self.d_evt, \
+        _, self.l_evt = list_files_dir_lev2(self.d_root, self.d_evt, \
                                                  self.n_root, self.n_evt)
 
     def buildlistskim(self):
-        _, self.l_recosk = self.list_files_dir_lev2(self.d_reco, self.d_recosk, \
+        _, self.l_recosk = list_files_dir_lev2(self.d_reco, self.d_recosk, \
                                                self.n_reco, self.n_recosk)
-
-    def unpack_module(self, filein, fileout, treename, varlist, selection):
-        tree = uproot.open(filein)[treename]
-        df = tree.pandas.df(branches=varlist)
-        if selection is not None:
-            df = df.query(selection)
-        df.to_pickle(fileout)
 
     def unpack(self, file_index):
         self.unpack_module(self.l_root[file_index], self.l_reco[file_index], \
@@ -146,35 +139,13 @@ class Processer: # pylint: disable=too-many-instance-attributes
         if self.activateunpack:
             self.unpackparallel()
 
-    # pylint: disable=too-many-nested-blocks
-    def list_files_dir_lev2(self, main_dir, outdir, filenameinput, filenameoutput):
-        list_subdir0 = os.listdir(main_dir)
-        listfilespath = list()
-        listfilesflatout = list()
-        for subdir0 in list_subdir0:
-            subdir0full = os.path.join(main_dir, subdir0)
-            outdir0full = os.path.join(outdir, subdir0)
-            if not os.path.exists(outdir0full) and os.path.isdir(subdir0full):
-                os.makedirs(outdir0full)
-            if os.path.isdir(subdir0full):
-                list_subdir1 = os.listdir(subdir0full)
-                for subdir1 in list_subdir1:
-                    subdir1full = os.path.join(subdir0full, subdir1)
-                    outdir1full = os.path.join(outdir0full, subdir1)
-                    if not os.path.exists(outdir1full) and os.path.isdir(subdir1full):
-                        os.makedirs(outdir1full)
-                    if os.path.isdir(subdir1full):
-                        list_files_ = os.listdir(subdir1full)
-                        for myfile in list_files_:
-                            filefull = os.path.join(subdir1full, myfile)
-                            filefullout = os.path.join(outdir1full, myfile)
-                            filefullout = filefullout.replace(filenameinput, \
-                                                              filenameoutput)
-                            if os.path.isfile(filefull) and \
-                            myfile == filenameinput:
-                                listfilespath.append(filefull)
-                                listfilesflatout.append(filefullout)
-        return listfilespath, listfilesflatout
+    @staticmethod
+    def unpack_module(filein, fileout, treename, varlist, selection):
+        tree = uproot.open(filein)[treename]
+        df = tree.pandas.df(branches=varlist)
+        if selection is not None:
+            df = df.query(selection)
+        df.to_pickle(fileout)
 
 #     def skimmer(self):
 #         arguments = [(self.l_pkl[i], self.l_pklsk[i]) for i in range(len(self.l_pklsk))]
