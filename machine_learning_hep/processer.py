@@ -78,7 +78,7 @@ class Processer: # pylint: disable=too-many-instance-attributes
         #variables name
         self.v_all = datap["variables"]["var_all"]
         self.v_evt = datap["variables"]["var_evt"][self.mcordata]
-        self.v_gen = datap["variables"]["var_all"]
+        self.v_gen = datap["variables"]["var_gen"]
         self.v_evtmatch = datap["variables"]["var_evt_match"]
         self.v_bitvar = datap["bitmap_sel"]["var_name"]
         self.v_isstd = datap["bitmap_sel"]["var_isstd"]
