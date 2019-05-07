@@ -142,8 +142,9 @@ class Processer: # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def selectdfrunlist(dfr, runlist, runvar):
-        isgoodrun = select_runs(runlist, dfr[runvar].values)
-        dfr = dfr[np.array(isgoodrun, dtype=bool)]
+        if runlist is not None:
+            isgoodrun = select_runs(runlist, dfr[runvar].values)
+            dfr = dfr[np.array(isgoodrun, dtype=bool)]
         return dfr
 
     def unpack(self, file_index):

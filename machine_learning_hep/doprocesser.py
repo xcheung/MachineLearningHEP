@@ -27,7 +27,7 @@ def doprocesser():
         data_param = yaml.load(param_config)
     with open("data/database_run_list.yml", 'r') as runlist_config:
         run_param = yaml.load(runlist_config)
-    mcordata = "data"
+    mcordata = "mc"
 
     indexp = 0
     case = data_config["case"]

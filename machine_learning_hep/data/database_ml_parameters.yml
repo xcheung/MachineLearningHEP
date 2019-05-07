@@ -70,3 +70,8 @@ LctopK0sPbPbCen3050:
       unmerged_tree_dir: [dataroot, dataroot]
       pkl: [datapkl, datapkl]
       pkl_skimmed: [filesout, filesout]
+    mc:
+     production: [LHC19c2b2_q]
+     unmerged_tree_dir: [mcroot]
+     pkl: [mcpkl]
+     pkl_skimmed: [mcskimmed]
