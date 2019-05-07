@@ -15,6 +15,7 @@
 """
 main script for doing data processing, machine learning and analysis
 """
+import time
 import yaml
 from processer import Processer  # pylint: disable=import-error
 
@@ -25,14 +26,16 @@ def doprocesser():
     with open("data/database_ml_parameters.yml", 'r') as param_config:
         data_param = yaml.load(param_config)
     with open("data/database_run_list.yml", 'r') as runlist_config:
-              run_param = yaml.load(runlist_config)
+        run_param = yaml.load(runlist_config)
     mcordata = "data"
 
     indexp = 0
     case = data_config["case"]
-
+    t0 = time.time()
     myprocess = Processer(data_param[case], run_param, mcordata, indexp, 10)
     myprocess.activate_unpack()
+    myprocess.activate_skim()
     myprocess.run()
+    print("time elapsed=,", time.time() - t0)
 
 doprocesser()
