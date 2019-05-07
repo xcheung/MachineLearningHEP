@@ -167,16 +167,17 @@ class Processer: # pylint: disable=too-many-instance-attributes
         dfreco = dfreco[np.array(isselacc, dtype=bool)]
         if self.b_trackcuts is not None:
             dfreco = filter_bit_df(dfreco, self.v_bitvar, self.b_trackcuts)
-        dfreco[self.v_isstd] = np.array(tag_bit_df(dfreco, self.v_bitvar,
-                                                   self.b_std), dtype=int)
-        dfreco[self.v_ismcsignal] = np.array(tag_bit_df(dfreco, self.v_bitvar,
-                                                        self.b_mcsig), dtype=int)
-        dfreco[self.v_ismcprompt] = np.array(tag_bit_df(dfreco, self.v_bitvar,
-                                                        self.b_mcsigprompt), dtype=int)
-        dfreco[self.v_ismcfd] = np.array(tag_bit_df(dfreco, self.v_bitvar,
-                                                    self.b_mcsigfd), dtype=int)
-        dfreco[self.v_ismcbkg] = np.array(tag_bit_df(dfreco, self.v_bitvar,
-                                                     self.b_mcbkg), dtype=int)
+        if self.mcordata == "mc":
+            dfreco[self.v_isstd] = np.array(tag_bit_df(dfreco, self.v_bitvar,
+                                                       self.b_std), dtype=int)
+            dfreco[self.v_ismcsignal] = np.array(tag_bit_df(dfreco, self.v_bitvar,
+                                                            self.b_mcsig), dtype=int)
+            dfreco[self.v_ismcprompt] = np.array(tag_bit_df(dfreco, self.v_bitvar,
+                                                            self.b_mcsigprompt), dtype=int)
+            dfreco[self.v_ismcfd] = np.array(tag_bit_df(dfreco, self.v_bitvar,
+                                                        self.b_mcsigfd), dtype=int)
+            dfreco[self.v_ismcbkg] = np.array(tag_bit_df(dfreco, self.v_bitvar,
+                                                         self.b_mcbkg), dtype=int)
         dfreco.to_pickle(self.l_reco[file_index])
 
         if self.mcordata == "mc":
