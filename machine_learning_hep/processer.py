@@ -47,11 +47,11 @@ class Processer: # pylint: disable=too-many-instance-attributes
         #namefiles pkl
         self.n_reco = datap["files_names"]["namefile_reco"]
         self.n_evt = datap["files_names"]["namefile_evt"]
+        self.n_evtorig = datap["files_names"]["namefile_evtorig"]
         self.n_gen = datap["files_names"]["namefile_gen"]
 
         #namefiles pkl skimmed
         self.n_recosk = datap["files_names"]["namefile_reco_skim"]
-        self.n_evtsk = datap["files_names"]["namefile_evt_skim"]
         self.n_gensk = datap["files_names"]["namefile_gen_skim"]
 
         #directories
@@ -61,10 +61,10 @@ class Processer: # pylint: disable=too-many-instance-attributes
 
         #selections
         self.s_reco_unp = datap["sel_reco_unp"]
-        self.s_evt_unp = datap["sel_evt_unp"]
+        self.s_good_evt_unp = datap["sel_good_evt_unp"]
+        self.s_cen_unp = datap["sel_cen_unp"]
         self.s_gen_unp = datap["sel_gen_unp"]
         self.s_reco_skim = datap["sel_reco_skim"]
-        self.s_evt_skim = datap["sel_evt_skim"]
         self.s_gen_skim = datap["sel_gen_skim"]
 
         #bitmap
@@ -126,14 +126,14 @@ class Processer: # pylint: disable=too-many-instance-attributes
                                         self.n_root, self.n_gen)
         _, self.l_evt = list_files_dir_lev2(self.d_root, self.d_pkl, \
                                                  self.n_root, self.n_evt)
+        _, self.l_evtorig = list_files_dir_lev2(self.d_root, self.d_pkl, \
+                                                self.n_root, self.n_evtorig)
 
     def buildlistpklskim(self):
         _, self.l_recosk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
                                                self.n_reco, self.n_recosk)
         _, self.l_gensk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
                                                self.n_gen, self.n_gensk)
-        _, self.l_evtsk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
-                                               self.n_evt, self.n_evtsk)
     @staticmethod
     def selectdfquery(dfr, selection):
         if selection is not None:
@@ -148,10 +148,12 @@ class Processer: # pylint: disable=too-many-instance-attributes
 
     def unpack(self, file_index):
 
-        treeevt = uproot.open(self.l_root[file_index])[self.n_treeevt]
-        dfevt = treeevt.pandas.df(branches=self.v_evt)
-        dfevt = self.selectdfrunlist(dfevt, self.runlist, "run_number")
-        dfevt = self.selectdfquery(dfevt, self.s_evt_unp)
+        treeevtorig = uproot.open(self.l_root[file_index])[self.n_treeevt]
+        dfevtorig = treeevtorig.pandas.df(branches=self.v_evt)
+        dfevtorig = self.selectdfrunlist(dfevtorig, self.runlist, "run_number")
+        dfevtorig = self.selectdfquery(dfevtorig, self.s_cen_unp)
+        dfevtorig.to_pickle(self.l_evtorig[file_index])
+        dfevt = self.selectdfquery(dfevtorig, self.s_good_evt_unp)
         dfevt.to_pickle(self.l_evt[file_index])
 
         treereco = uproot.open(self.l_root[file_index])[self.n_treereco]
@@ -159,7 +161,8 @@ class Processer: # pylint: disable=too-many-instance-attributes
         dfreco = self.selectdfrunlist(dfreco, self.runlist, "run_number")
         dfreco = self.selectdfquery(dfreco, self.s_reco_unp)
         dfreco = pd.merge(dfreco, dfevt, on=self.v_evtmatch)
-        dfreco = self.selectdfquery(dfreco, self.s_evt_unp)
+        dfgen = self.selectdfquery(dfreco, self.s_cen_unp)
+        dfreco = self.selectdfquery(dfreco, self.s_good_evt_unp)
         isselacc = selectfidacc(dfreco.pt_cand.values, dfreco.y_cand.values)
         dfreco = dfreco[np.array(isselacc, dtype=bool)]
         if self.b_trackcuts is not None:
@@ -174,26 +177,22 @@ class Processer: # pylint: disable=too-many-instance-attributes
                                                     self.b_mcsigfd), dtype=int)
         dfreco[self.v_ismcbkg] = np.array(tag_bit_df(dfreco, self.v_bitvar,
                                                      self.b_mcbkg), dtype=int)
-
         dfreco.to_pickle(self.l_reco[file_index])
 
         if self.mcordata == "mc":
             treegen = uproot.open(self.l_root[file_index])[self.n_treegen]
             dfgen = treegen.pandas.df(branches=self.v_gen)
             dfgen = self.selectdfrunlist(dfgen, self.runlist, "run_number")
-            dfgen = self.selectdfquery(dfgen, self.s_gen_unp)
             dfgen = pd.merge(dfgen, dfevt, on=self.v_evtmatch)
-            dfgen = self.selectdfquery(dfgen, self.s_evt_unp)
+            dfgen = self.selectdfquery(dfgen, self.s_gen_unp)
+            dfgen = self.selectdfquery(dfgen, self.s_good_evt_unp)
+            dfgen = self.selectdfquery(dfgen, self.s_cen_unp)
             dfgen.to_pickle(self.l_gen[file_index])
 
     def skim(self, file_index):
         dfreco = pickle.load(open(self.l_reco[file_index], "rb"))
         dfreco = self.selectdfquery(dfreco, self.s_reco_skim)
         dfreco.to_pickle(self.l_recosk[file_index])
-
-        dfevt = pickle.load(open(self.l_evt[file_index], "rb"))
-        dfevt = self.selectdfquery(dfevt, self.s_evt_skim)
-        dfevt.to_pickle(self.l_evtsk[file_index])
 
         if self.mcordata == "mc":
             dfgen = pickle.load(open(self.l_gen[file_index], "rb"))
