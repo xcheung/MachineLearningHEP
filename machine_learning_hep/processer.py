@@ -18,7 +18,11 @@ main script for doing data processing, machine learning and analysis
 import multiprocessing as mp
 import pickle
 import uproot
+import pandas as pd
+import numpy as np
 from machine_learning_hep.listfiles import list_files_dir_lev2
+from machine_learning_hep.selectionutils import selectfidacc, select_runs
+from machine_learning_hep.bitwise import filter_bit_df
 
 class Processer: # pylint: disable=too-many-instance-attributes
     # Class Attribute
@@ -61,12 +65,15 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.s_reco_skim = datap["skimming2_sel"]
         self.s_evt_skim = datap["skimming2_sel_evt"]
         self.s_gen_skim = datap["skimming2_sel_gen"]
-        self.s_reco_trackpid = datap["skimming2_dotrackpid"]
+
+        #bitmap
+        self.b_trackcuts = datap["skimming_preseltrack"]
 
         #variables name
         self.v_all = datap["variables"]["var_all"]
         self.v_evt = datap["variables"]["var_evt"][self.mcordata]
         self.v_gen = datap["variables"]["var_all"]
+        self.v_evtmatch = datap["variables"]["var_evt_match"]
 
         #list of files names
         self.l_root = None
@@ -76,6 +83,9 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.l_recosk = None
         self.l_gensk = None
         self.l_evtsk = None
+
+        self.period = datap["inputs"][self.mcordata]["production"][self.index_period]
+        self.runlist = run_param[self.period]
 
         #parameter names
         self.maxperchunk = 30
@@ -107,49 +117,59 @@ class Processer: # pylint: disable=too-many-instance-attributes
                                                self.n_gen, self.n_gensk)
         _, self.l_evtsk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
                                                self.n_evt, self.n_evtsk)
+    @staticmethod
+    def selectdfquery(dfr, selection):
+        if selection is not None:
+            dfr = dfr.query(selection)
+        return dfr
+
+    @staticmethod
+    def selectdfrunlist(dfr, runlist, runvar):
+        isgoodrun = select_runs(runlist, dfr[runvar].values)
+        dfr = dfr[np.array(isgoodrun, dtype=bool)]
+        return dfr
 
     def unpack(self, file_index):
-        treereco = uproot.open(self.l_root[file_index])[self.n_treereco]
-        dfreco = treereco.pandas.df(branches=self.v_all)
-        if self.s_reco_unp is not None:
-            dfreco = dfreco.query(self.s_reco_unp)
-        dfreco.to_pickle(self.l_reco[file_index])
 
         treeevt = uproot.open(self.l_root[file_index])[self.n_treeevt]
         dfevt = treeevt.pandas.df(branches=self.v_evt)
-        if self.s_evt_unp is not None:
-            dfevt = dfevt.query(self.s_evt_unp)
+        dfevt = self.selectdfrunlist(dfevt, self.runlist, "run_number")
+        dfevt = self.selectdfquery(dfevt, self.s_evt_unp)
         dfevt.to_pickle(self.l_evt[file_index])
+
+        treereco = uproot.open(self.l_root[file_index])[self.n_treereco]
+        dfreco = treereco.pandas.df(branches=self.v_all)
+        dfreco = self.selectdfrunlist(dfreco, self.runlist, "run_number")
+        dfreco = self.selectdfquery(dfreco, self.s_reco_unp)
+        dfreco = pd.merge(dfreco, dfevt, on=self.v_evtmatch)
+        dfreco = self.selectdfquery(dfreco, self.s_evt_unp)
+        isselacc = selectfidacc(dfreco.pt_cand.values, dfreco.y_cand.values)
+        dfreco = dfreco[np.array(isselacc, dtype=bool)]
+        if self.b_trackcuts is not None:
+            dfreco = filter_bit_df(dfreco, "cand_type", self.b_trackcuts)
+        dfreco.to_pickle(self.l_reco[file_index])
 
         if self.mcordata == "mc":
             treegen = uproot.open(self.l_root[file_index])[self.n_treegen]
             dfgen = treegen.pandas.df(branches=self.v_gen)
-            if self.s_gen_unp is not None:
-                dfgen = dfgen.query(self.s_gen_unp)
+            dfgen = self.selectdfrunlist(dfgen, self.runlist, "run_number")
+            dfgen = self.selectdfquery(dfgen, self.s_gen_unp)
+            dfgen = pd.merge(dfgen, dfevt, on=self.v_evtmatch)
+            dfgen = self.selectdfquery(dfgen, self.s_evt_unp)
             dfgen.to_pickle(self.l_gen[file_index])
 
-
-#    def unpack(self, file_index):
-#        self.unpack_module(self.l_root[file_index], self.l_reco[file_index], \
-#                           self.n_treereco, self.v_all, self.s_reco_unp)
-#        self.unpack_module(self.l_root[file_index], self.l_evt[file_index], \
-#                           self.n_treeevt, self.v_evt, self.s_evt_unp)
-#        if self.mcordata == "mc":
-#            self.unpack_module(self.l_root[file_index], self.l_gen[file_index], \
-#                               self.n_treegen, self.v_gen, self.s_gen_unp)
-
     def skim(self, file_index):
-        df = pickle.load(open(self.l_reco[file_index], "rb"))
-        df = df.query(self.s_reco_skim)
-        df.to_pickle(self.l_recosk[file_index])
+        dfreco = pickle.load(open(self.l_reco[file_index], "rb"))
+        dfreco = dfreco.query(self.s_reco_skim)
+        dfreco.to_pickle(self.l_recosk[file_index])
 
         dfevt = pickle.load(open(self.l_evt[file_index], "rb"))
-        dfevt = df.query(self.s_evt_skim)
+        dfevt = dfevt.query(self.s_evt_skim)
         dfevt.to_pickle(self.l_evtsk[file_index])
 
         if self.mcordata == "mc":
             dfgen = pickle.load(open(self.l_gen[file_index], "rb"))
-            dfgen = df.query(self.s_gen_skim)
+            dfgen = dfgen.query(self.s_gen_skim)
             dfgen.to_pickle(self.l_gensk[file_index])
 
     def parallelizer(self, function, argument_list):
@@ -175,10 +195,3 @@ class Processer: # pylint: disable=too-many-instance-attributes
         if self.activateunpack:
             self.unpackparallel()
 
-#    @staticmethod
-#    def unpack_module(filein, fileout, treename, varlist, selection):
-#        tree = uproot.open(filein)[treename]
-#        df = tree.pandas.df(branches=varlist)
-#        if selection is not None:
-#            df = df.query(selection)
-#        df.to_pickle(fileout)
