@@ -17,6 +17,8 @@ main script for doing data processing, machine learning and analysis
 """
 import multiprocessing as mp
 import pickle
+import os
+import random as rd
 import uproot
 import pandas as pd
 import numpy as np
@@ -54,10 +56,18 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.n_recosk = datap["files_names"]["namefile_reco_skim"]
         self.n_gensk = datap["files_names"]["namefile_gen_skim"]
 
+        #namefiles pkl skimmed_merge_ml
+        self.n_reco_mergeml = datap["files_names"]["namefile_reco_merged_for_ml"]
+        self.n_gen_mergeml = datap["files_names"]["namefile_gen_merged_for_ml"]
+        self.n_evt_mergeml = datap["files_names"]["namefile_evt_merged_for_ml"]
+        self.n_evtorig_mergeml = datap["files_names"]["namefile_evtorig_merged_for_ml"]
+
         #directories
         self.d_root = datap["directories"][self.mcordata]["unmerged_tree_dir"][self.index_period]
         self.d_pkl = datap["directories"][self.mcordata]["pkl"][self.index_period]
         self.d_pklsk = datap["directories"][self.mcordata]["pkl_skimmed"][self.index_period]
+        self.d_pkl_ml = \
+                datap["directories"][self.mcordata]["pkl_skimmed_merge_for_ml"][self.index_period]
 
         #selections
         self.s_reco_unp = datap["sel_reco_unp"]
@@ -92,9 +102,13 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.l_reco = None
         self.l_gen = None
         self.l_evt = None
+        self.l_evtorig = None
         self.l_recosk = None
         self.l_gensk = None
         self.l_evtsk = None
+
+        self.p_frac_merge = datap["merge_param"]["frac_data"][mcordata]
+        self.p_rd_merge = datap["merge_param"]["rd_seed"][mcordata]
 
         self.period = datap["directories"][self.mcordata]["production"][self.index_period]
         self.runlist = run_param[self.period]
@@ -130,10 +144,10 @@ class Processer: # pylint: disable=too-many-instance-attributes
                                                 self.n_root, self.n_evtorig)
 
     def buildlistpklskim(self):
-        _, self.l_recosk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
-                                               self.n_reco, self.n_recosk)
-        _, self.l_gensk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
-                                               self.n_gen, self.n_gensk)
+        _, self.l_recosk = list_files_dir_lev2(self.d_root, self.d_pklsk, \
+                                               self.n_root, self.n_recosk)
+        _, self.l_gensk = list_files_dir_lev2(self.d_root, self.d_pklsk, \
+                                               self.n_root, self.n_gensk)
     @staticmethod
     def selectdfquery(dfr, selection):
         if selection is not None:
@@ -147,8 +161,17 @@ class Processer: # pylint: disable=too-many-instance-attributes
             dfr = dfr[np.array(isgoodrun, dtype=bool)]
         return dfr
 
-    def unpack(self, file_index):
+    @staticmethod
+    def merge_method(listfiles, namemerged):
+        dflist = []
+        for myfilename in listfiles:
+            myfile = open(myfilename, "rb")
+            df = pickle.load(myfile)
+            dflist.append(df)
+        dftot = pd.concat(dflist)
+        dftot.to_pickle(namemerged)
 
+    def unpack(self, file_index):
         treeevtorig = uproot.open(self.l_root[file_index])[self.n_treeevt]
         dfevtorig = treeevtorig.pandas.df(branches=self.v_evt)
         dfevtorig = self.selectdfrunlist(dfevtorig, self.runlist, "run_number")
@@ -217,6 +240,21 @@ class Processer: # pylint: disable=too-many-instance-attributes
         arguments = [(i,) for i in range(len(self.l_reco))]
         self.parallelizer(self.skim, arguments)
 
+    def merge(self):
+        nfiles = len(self.l_recosk)
+        ntomerge = (int)(nfiles * self.p_frac_merge)
+        rd.seed(self.p_rd_merge)
+        filesel = rd.sample(range(0, nfiles), ntomerge)
+        list_sel_recosk = [self.l_recosk[j] for j in filesel]
+        list_sel_gensk = [self.l_gensk[j] for j in filesel]
+        list_sel_evt = [self.l_evt[j] for j in filesel]
+        list_sel_evtorig = [self.l_evtorig[j] for j in filesel]
+
+        self.merge_method(list_sel_recosk, os.path.join(self.d_pkl_ml, self.n_reco_mergeml))
+        self.merge_method(list_sel_gensk, os.path.join(self.d_pkl_ml, self.n_gen_mergeml))
+        self.merge_method(list_sel_evt, os.path.join(self.d_pkl_ml, self.n_evt_mergeml))
+        self.merge_method(list_sel_evtorig, os.path.join(self.d_pkl_ml, self.n_evtorig_mergeml))
+
     def run(self):
         self.buildlistpkl()
         self.buildlistpklskim()
@@ -224,3 +262,4 @@ class Processer: # pylint: disable=too-many-instance-attributes
             self.unpackparallel()
         if self.activateskim:
             self.skimparallel()
+        self.merge()
