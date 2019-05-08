@@ -52,15 +52,6 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.n_evtorig = datap["files_names"]["namefile_evtorig"]
         self.n_gen = datap["files_names"]["namefile_gen"]
 
-        #namefiles pkl skimmed
-        self.n_recosk = datap["files_names"]["namefile_reco_skim"]
-        self.n_gensk = datap["files_names"]["namefile_gen_skim"]
-
-        #namefiles pkl skimmed_merge_ml
-        self.n_reco_mergeml = datap["files_names"]["namefile_reco_merged_for_ml"]
-        self.n_gen_mergeml = datap["files_names"]["namefile_gen_merged_for_ml"]
-        self.n_evt_mergeml = datap["files_names"]["namefile_evt_merged_for_ml"]
-        self.n_evtorig_mergeml = datap["files_names"]["namefile_evtorig_merged_for_ml"]
 
         #directories
         self.d_root = datap["directories"][self.mcordata]["unmerged_tree_dir"][self.index_period]
@@ -121,6 +112,13 @@ class Processer: # pylint: disable=too-many-instance-attributes
         #activators
         self.activateunpack = False
         self.activateskim = False
+        self.activatemerge = False
+
+        #list of output names
+        self.o_reco_ml = None
+        self.o_gen_ml = None
+        self.o_evt_ml = None
+        self.o_evtorig_ml = None
 
     def activate_unpack(self):
         self.activateunpack = True
@@ -130,8 +128,21 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.activateskim = True
         print("Skimmer activated")
 
+    def activate_merge(self):
+        self.activatemerge = True
+        print("Merger activated")
+
     def set_maxperchunk(self, maxperchunk):
         self.maxperchunk = maxperchunk
+
+    def get_reco_ml_merged(self):
+        return self.o_reco_ml
+    def get_gen_ml_merged(self):
+        return self.o_gen_ml
+    def get_evt_ml_merged(self):
+        return self.o_evt_ml
+    def get_evtorig_ml_merged(self):
+        return self.o_evtorig_ml
 
     def buildlistpkl(self):
         self.l_root, self.l_reco = list_files_dir_lev2(self.d_root, \
@@ -145,9 +156,9 @@ class Processer: # pylint: disable=too-many-instance-attributes
 
     def buildlistpklskim(self):
         _, self.l_recosk = list_files_dir_lev2(self.d_root, self.d_pklsk, \
-                                               self.n_root, self.n_recosk)
+                                               self.n_root, self.n_reco)
         _, self.l_gensk = list_files_dir_lev2(self.d_root, self.d_pklsk, \
-                                               self.n_root, self.n_gensk)
+                                               self.n_root, self.n_gen)
     @staticmethod
     def selectdfquery(dfr, selection):
         if selection is not None:
@@ -250,10 +261,15 @@ class Processer: # pylint: disable=too-many-instance-attributes
         list_sel_evt = [self.l_evt[j] for j in filesel]
         list_sel_evtorig = [self.l_evtorig[j] for j in filesel]
 
-        self.merge_method(list_sel_recosk, os.path.join(self.d_pkl_ml, self.n_reco_mergeml))
-        self.merge_method(list_sel_gensk, os.path.join(self.d_pkl_ml, self.n_gen_mergeml))
-        self.merge_method(list_sel_evt, os.path.join(self.d_pkl_ml, self.n_evt_mergeml))
-        self.merge_method(list_sel_evtorig, os.path.join(self.d_pkl_ml, self.n_evtorig_mergeml))
+        self.o_reco_ml = os.path.join(self.d_pkl_ml, self.n_reco)
+        self.o_gen_ml = os.path.join(self.d_pkl_ml, self.n_gen)
+        self.o_evt_ml = os.path.join(self.d_pkl_ml, self.n_evt)
+        self.o_evtorig_ml = os.path.join(self.d_pkl_ml, self.n_evtorig)
+
+        self.merge_method(list_sel_recosk, self.o_reco_ml)
+        self.merge_method(list_sel_gensk, self.o_gen_ml)
+        self.merge_method(list_sel_evt, self.o_evt_ml)
+        self.merge_method(list_sel_evtorig, self.o_evtorig_ml)
 
     def run(self):
         self.buildlistpkl()
@@ -262,4 +278,5 @@ class Processer: # pylint: disable=too-many-instance-attributes
             self.unpackparallel()
         if self.activateskim:
             self.skimparallel()
-        self.merge()
+        if self.activatemerge:
+            self.merge()

@@ -35,7 +35,11 @@ def doprocesser():
     myprocess = Processer(data_param[case], run_param, mcordata, indexp, 10)
     myprocess.activate_unpack()
     myprocess.activate_skim()
+    myprocess.activate_merge()
     myprocess.run()
     print("time elapsed=,", time.time() - t0)
-
+    print(myprocess.get_reco_ml_merged())
+    print(myprocess.get_gen_ml_merged())
+    print(myprocess.get_evt_ml_merged())
+    print(myprocess.get_evtorig_ml_merged())
 doprocesser()

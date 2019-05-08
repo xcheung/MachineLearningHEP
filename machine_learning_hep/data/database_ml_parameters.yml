@@ -14,10 +14,6 @@
 
 LctopK0sPbPbCen3050:
 
-  mass: 2.2864
-  pdg_code: null
-  mass_fit_lim: [2.14, 2.48] # region for the fit of the invariant mass distribution [GeV/c^2]
-  bin_width: 0.001 # bin width of the invariant mass histogram
   sel_reco_unp: "pt_cand>4 & abs(eta_prong0)<0.8 and abs(eta_prong1)<0.8 and abs(eta_prong2)<0.8"
   sel_reco_singletrac_unp : [[8],[]]
   sel_gen_unp: "pt_cand>4 and abs(z_vtx_gen)<10"
@@ -56,16 +52,10 @@ LctopK0sPbPbCen3050:
     namefile_evt: AnalysisResultsEvt.pkl
     namefile_evtorig: AnalysisResultsEvtOrig.pkl
     namefile_gen: AnalysisResultsGen.pkl
-    namefile_reco_skim: AnalysisResultsRecoSkimmed.pkl
-    namefile_evt_skim: AnalysisResultsEvtSkimmed.pkl
-    namefile_gen_skim: AnalysisResultsGenSkimmed.pkl
-    namefile_reco_merged_for_ml: AnalysisResultsRecoSkimmedMergedML.pkl
-    namefile_gen_merged_for_ml: AnalysisResultsGenSkimmedMergedML.pkl 
-    namefile_evt_merged_for_ml: AnalysisResultsEvtSkimmedMergedML.pkl 
-    namefile_evtorig_merged_for_ml: AnalysisResultsEvtOrigSkimmedMergedML.pkl 
     treeoriginreco: 'PWGHF_TreeCreator/tree_Lc2V0bachelor'
     treeorigingen: 'PWGHF_TreeCreator/tree_Lc2V0bachelor_gen'
     treeoriginevt: 'PWGHF_TreeCreator/tree_event_char'
+    namefile_reco_ml_applied: AnalysisResultsRecoML.pkl
 
   merge_param:
     frac_data:
@@ -81,10 +71,19 @@ LctopK0sPbPbCen3050:
       unmerged_tree_dir: [dataroot]
       pkl: [datapkl]
       pkl_skimmed: [datapklskimmed]
-      pkl_skimmed_merge_for_ml: [datapklskimmed_merge_for_ml]
+      pkl_skimmed_merge_for_ml: [datapklskimmed/merged]
+      pkl_ml_applied: [datapklskimmedML]
+      pkl_finalmerged: [datapklskimmedML/merged]
     mc:
       production: [LHC19c2b2_q]
       unmerged_tree_dir: [mcroot]
       pkl: [mcpkl]
       pkl_skimmed: [mcpklskimmed]
-      pkl_skimmed_merge_for_ml: [mcpklskimmed_merge_for_ml]
+      pkl_skimmed_merge_for_ml: [mcpklskimmed/merged]
+      pkl_ml_applied: [mcpklskimmedML]
+      pkl_finalmerged: [mcpklskimmedML/merged]
+  mlmodel: [xgboost_classifiernevt_sig300010_nevt_bkg300010_BinaryClassificationLctopK0sPbPbCen3050_dfselection_pt_cand_8.0_12.0.sav] 
+  modelbinmin: [8]
+  modelbinmax: [12]
+  prefilter_prob: [0.5]
+
