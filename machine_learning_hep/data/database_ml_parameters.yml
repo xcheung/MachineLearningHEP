@@ -66,12 +66,14 @@ LctopK0sPbPbCen3050:
       mc: 32
 
   directories:
+
     data:
       production: [LHC18q]
       unmerged_tree_dir: [dataroot]
       pkl: [datapkl]
       pkl_skimmed: [datapklskimmed]
       pkl_skimmed_merge_for_ml: [datapklskimmed/merged]
+      pkl_skimmed_merge_for_ml_allperiods: [datapklskimmedallperiods]
       pkl_ml_applied: [datapklskimmedML]
       pkl_finalmerged: [datapklskimmedML/merged]
     mc:
@@ -80,10 +82,11 @@ LctopK0sPbPbCen3050:
       pkl: [mcpkl]
       pkl_skimmed: [mcpklskimmed]
       pkl_skimmed_merge_for_ml: [mcpklskimmed/merged]
+      pkl_skimmed_merge_for_ml_allperiods: [mcpklskimmedallperiods]
       pkl_ml_applied: [mcpklskimmedML]
       pkl_finalmerged: [mcpklskimmedML/merged]
+
   mlmodel: [xgboost_classifiernevt_sig300010_nevt_bkg300010_BinaryClassificationLctopK0sPbPbCen3050_dfselection_pt_cand_8.0_12.0.sav] 
   modelbinmin: [8]
   modelbinmax: [12]
   prefilter_prob: [0.5]
-
