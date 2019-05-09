@@ -17,7 +17,7 @@ main script for doing data processing, machine learning and analysis
 """
 import time
 import yaml
-from processer import Processer  # pylint: disable=import-error
+from multiprocesser import MultiProcesser  # pylint: disable=import-error
 
 def doprocesser():
 
@@ -27,19 +27,12 @@ def doprocesser():
         data_param = yaml.load(param_config)
     with open("data/database_run_list.yml", 'r') as runlist_config:
         run_param = yaml.load(runlist_config)
-    mcordata = "mc"
-
-    indexp = 0
-    case = data_config["case"]
+    case = "LctopK0sPbPbCen3050"
     t0 = time.time()
-    myprocess = Processer(data_param[case], run_param, mcordata, indexp, 10)
-    myprocess.activate_unpack()
-    myprocess.activate_skim()
-    myprocess.activate_merge()
-    myprocess.run()
-    print("time elapsed=,", time.time() - t0)
-    print(myprocess.get_reco_ml_merged())
-    print(myprocess.get_gen_ml_merged())
-    print(myprocess.get_evt_ml_merged())
-    print(myprocess.get_evtorig_ml_merged())
+
+    mymultiprocess_mc = MultiProcesser(data_param[case], run_param, "mc")
+    #mymultiprocess_mc.run_unpack_all()
+    #mymultiprocess_mc.run_skim_all()
+    mymultiprocess_mc.run_merge_all()
+    mymultiprocess_mc.merge_periods()
 doprocesser()
