@@ -58,6 +58,11 @@ LctopK0sPbPbCen3050:
   
   multi:
     data:
+      nperiods: 1
+      maxfilesunp : [2]
+      maxfilesskim : [2]
+      chunksizeunp : [1]
+      chunksizeskim: [1]
       fracmerge : [0.1]
       seedmerge: [23]
       period: [LHC18q]
@@ -67,7 +72,12 @@ LctopK0sPbPbCen3050:
       pkl_skimmed_merge_for_ml: [datapklskimmed/merged]
       pkl_skimmed_merge_for_ml_all: datapklskimmedallperiods
     mc:
-      fracmerge : [0.1]
+      nperiods: 1
+      maxfilesunp : [10]
+      maxfilesskim : [10]
+      chunksizeunp : [1]
+      chunksizeskim: [1]
+      fracmerge : [1.0]
       seedmerge: [23]
       period: [LHC19c2b2_q]
       unmerged_tree_dir: [mcroot]

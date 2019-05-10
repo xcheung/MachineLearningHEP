@@ -27,12 +27,13 @@ def doprocesser():
         data_param = yaml.load(param_config)
     with open("data/database_run_list.yml", 'r') as runlist_config:
         run_param = yaml.load(runlist_config)
-    case = "LctopK0sPbPbCen3050"
+        case = data_config["case"]
     t0 = time.time()
 
-    mymultiprocess_mc = MultiProcesser(data_param[case], run_param, "mc")
-    mymultiprocess_mc.multi_unpack_allperiods()
-    mymultiprocess_mc.multi_unpack_allperiods()
-    mymultiprocess_mc.multi_merge_allperiods()
-    mymultiprocess_mc.multi_merge_allinone()
+    for i in range(data_param[case]["multi"]["mc"]["nperiods"]):
+        mymultiprocess_mc = MultiProcesser(data_param[case], run_param, "mc")
+        mymultiprocess_mc.multi_unpack(i)
+        mymultiprocess_mc.multi_skim(i)
+        #mymultiprocess_mc.multi_merge(i)
+    #mymultiprocess_mc.multi_merge_allinone()
 doprocesser()

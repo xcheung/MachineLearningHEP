@@ -100,9 +100,14 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.period = None
         self.runlist = None
 
+        self.p_maxfilesunp = None
+        self.p_maxfilesskim = None
+        self.p_chunksizeunp = None
+        self.p_chunksizeskim = None
+
+
         #parameter names
-        self.maxperchunk = 30
-        self.maxprocess = 8
+        self.p_maxprocess = 1
         self.indexsample = None
 
 
@@ -111,9 +116,6 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.o_gen_ml = None
         self.o_evt_ml = None
         self.o_evtorig_ml = None
-
-    def set_maxperchunk(self, maxperchunk):
-        self.maxperchunk = maxperchunk
 
     def set_dir_root(self, d_root):
         self.d_root = d_root
@@ -137,6 +139,15 @@ class Processer: # pylint: disable=too-many-instance-attributes
     def set_period(self, period):
         self.period = period
 
+    def set_maxfilesunp(self, maxfilesunp):
+        self.p_maxfilesunp = maxfilesunp
+    def set_maxfilesskim(self, maxfilesskim):
+        self.p_maxfilesskim = maxfilesskim
+    def set_chunksizeunp(self, chunksizeunp):
+        self.p_chunksizeunp = chunksizeunp
+    def set_chunksizeskim(self, chunksizeskim):
+        self.p_chunksizeskim = chunksizeskim
+
     def get_reco_ml_merged(self):
         return self.o_reco_ml
 
@@ -156,17 +167,25 @@ class Processer: # pylint: disable=too-many-instance-attributes
                                                  self.n_root, self.n_evt)
         _, self.l_evtorig = list_files_dir_lev2(self.d_root, self.d_pkl, \
                                                 self.n_root, self.n_evtorig)
+
+        self.l_root = self.l_root[:self.p_maxfilesunp]
+        self.l_reco = self.l_reco[:self.p_maxfilesunp]
+        self.l_evt = self.l_evt[:self.p_maxfilesunp]
+        self.l_evtorig = self.l_evtorig[:self.p_maxfilesunp]
         if (self.mcordata == "mc"):
             _, self.l_gen = list_files_dir_lev2(self.d_root, self.d_pkl, \
                                         self.n_root, self.n_gen)
+            self.l_gen = self.l_gen[:self.p_maxfilesunp]
 
     def buildlistpklskim(self):
         _, self.l_recosk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
                                                self.n_reco, self.n_reco)
+        self.l_recosk = self.l_recosk[:self.p_maxfilesskim]
         if (self.mcordata == "mc"):
             _, self.l_gensk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
-                                               self.n_gen, self.n_gen)
-            print(self.l_gensk)
+                                                  self.n_gen, self.n_gen)
+            self.l_gensk = self.l_gensk[:self.p_maxfilesskim]
+
     def unpack(self, file_index):
         treeevtorig = uproot.open(self.l_root[file_index])[self.n_treeevt]
         dfevtorig = treeevtorig.pandas.df(branches=self.v_evt)
@@ -220,24 +239,25 @@ class Processer: # pylint: disable=too-many-instance-attributes
             dfgen = selectdfquery(dfgen, self.s_gen_skim)
             dfgen.to_pickle(self.l_gensk[file_index])
 
-    def parallelizer(self, function, argument_list):
-        chunks = [argument_list[x:x+self.maxperchunk] \
-                  for x in range(0, len(argument_list), self.maxperchunk)]
+    def parallelizer(self, function, argument_list, maxperchunk):
+        print(argument_list, maxperchunk)
+        chunks = [argument_list[x:x+maxperchunk] \
+                  for x in range(0, len(argument_list), maxperchunk)]
         for chunk in chunks:
-            pool = mp.Pool(self.maxprocess)
+            pool = mp.Pool(self.p_maxprocess)
             _ = [pool.apply(function, args=chunk[i]) for i in range(len(chunk))]
             pool.close()
 
     def process_unpack_par(self):
         self.buildlistpkl()
         arguments = [(i,) for i in range(len(self.l_root))]
-        self.parallelizer(self.unpack, arguments)
+        self.parallelizer(self.unpack, arguments, self.p_chunksizeunp)
 
     def process_skim_par(self):
         self.buildlistpkl()
         self.buildlistpklskim()
         arguments = [(i,) for i in range(len(self.l_reco))]
-        self.parallelizer(self.skim, arguments)
+        self.parallelizer(self.skim, arguments, self.p_chunksizeskim)
 
     def merge(self):
         nfiles = len(self.l_recosk)
@@ -257,11 +277,9 @@ class Processer: # pylint: disable=too-many-instance-attributes
         merge_method(list_sel_evtorig, self.o_evtorig_ml)
 
         if self.mcordata == "mc":
-            print(self.l_gensk)
             list_sel_gensk = [self.l_gensk[j] for j in filesel]
             self.o_gen_ml = os.path.join(self.d_pkl_ml, self.n_gen)
             merge_method(list_sel_gensk, self.o_gen_ml)
-
 
     def process_merge(self):
         self.buildlistpkl()
