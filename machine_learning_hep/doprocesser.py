@@ -34,6 +34,6 @@ def doprocesser():
         mymultiprocess_mc = MultiProcesser(data_param[case], run_param, "mc")
         mymultiprocess_mc.multi_unpack(i)
         mymultiprocess_mc.multi_skim(i)
-        #mymultiprocess_mc.multi_merge(i)
-    #mymultiprocess_mc.multi_merge_allinone()
+        mymultiprocess_mc.multi_merge(i)
+    mymultiprocess_mc.multi_merge_allinone()
 doprocesser()
