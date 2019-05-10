@@ -31,8 +31,8 @@ def doprocesser():
     t0 = time.time()
 
     mymultiprocess_mc = MultiProcesser(data_param[case], run_param, "mc")
-    #mymultiprocess_mc.run_unpack_all()
-    #mymultiprocess_mc.run_skim_all()
-    mymultiprocess_mc.run_merge_all()
-    mymultiprocess_mc.merge_periods()
+    mymultiprocess_mc.multi_unpack_allperiods()
+    mymultiprocess_mc.multi_unpack_allperiods()
+    mymultiprocess_mc.multi_merge_allperiods()
+    mymultiprocess_mc.multi_merge_allinone()
 doprocesser()

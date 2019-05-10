@@ -105,28 +105,12 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.maxprocess = 8
         self.indexsample = None
 
-        #activators
-        self.activateunpack = False
-        self.activateskim = False
-        self.activatemerge = False
 
         #list of output names
         self.o_reco_ml = None
         self.o_gen_ml = None
         self.o_evt_ml = None
         self.o_evtorig_ml = None
-
-    def activate_unpack(self):
-        self.activateunpack = True
-        print("Unpacker activated")
-
-    def activate_skim(self):
-        self.activateskim = True
-        print("Skimmer activated")
-
-    def activate_merge(self):
-        self.activatemerge = True
-        print("Merger activated")
 
     def set_maxperchunk(self, maxperchunk):
         self.maxperchunk = maxperchunk
@@ -244,18 +228,18 @@ class Processer: # pylint: disable=too-many-instance-attributes
             _ = [pool.apply(function, args=chunk[i]) for i in range(len(chunk))]
             pool.close()
 
-    def unpackparallel(self):
+    def process_unpack_par(self):
+        self.buildlistpkl()
         arguments = [(i,) for i in range(len(self.l_root))]
         self.parallelizer(self.unpack, arguments)
 
-    def skimparallel(self):
+    def process_skim_par(self):
+        self.buildlistpkl()
+        self.buildlistpklskim()
         arguments = [(i,) for i in range(len(self.l_reco))]
         self.parallelizer(self.skim, arguments)
 
     def merge(self):
-        print("AAAAA")
-        print(self.d_pkl_ml)
-        print(self.l_recosk)
         nfiles = len(self.l_recosk)
         ntomerge = (int)(nfiles * self.p_frac_merge)
         rd.seed(self.p_rd_merge)
@@ -278,17 +262,8 @@ class Processer: # pylint: disable=too-many-instance-attributes
             self.o_gen_ml = os.path.join(self.d_pkl_ml, self.n_gen)
             merge_method(list_sel_gensk, self.o_gen_ml)
 
-    def run_unpack(self):
-        self.buildlistpkl()
-        self.unpackparallel()
 
-    def run_skim(self):
-        print("I am here")
-        self.buildlistpkl()
-        self.buildlistpklskim()
-        self.skimparallel()
-
-    def run_merge(self):
+    def process_merge(self):
         self.buildlistpkl()
         self.buildlistpklskim()
         self.merge()
