@@ -69,7 +69,7 @@ LctopK0sPbPbCen3050:
       unmerged_tree_dir: [dataroot]
       pkl: [datapkl]
       pkl_skimmed: [datapklskimmed]
-      pkl_skimmed_merge_for_ml: [datapklskimmed/merged]
+      pkl_skimmed_merge_for_ml: [datapklskimmedmerged]
       pkl_skimmed_merge_for_ml_all: datapklskimmedallperiods
     mc:
       nperiods: 1
@@ -83,5 +83,5 @@ LctopK0sPbPbCen3050:
       unmerged_tree_dir: [mcroot]
       pkl: [mcpkl]
       pkl_skimmed: [mcpklskimmed]
-      pkl_skimmed_merge_for_ml: [mcpklskimmed/merged]
+      pkl_skimmed_merge_for_ml: [mcpklskimmedmerged]
       pkl_skimmed_merge_for_ml_all: mcpklskimmedallperiods
