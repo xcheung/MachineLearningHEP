@@ -28,7 +28,6 @@ def doprocesser():
     with open("data/database_run_list.yml", 'r') as runlist_config:
         run_param = yaml.load(runlist_config)
         case = data_config["case"]
-    t0 = time.time()
 
     for i in range(data_param[case]["multi"]["mc"]["nperiods"]):
         mymultiprocess_mc = MultiProcesser(data_param[case], run_param, "mc")

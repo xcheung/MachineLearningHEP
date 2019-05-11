@@ -59,8 +59,7 @@ LctopK0sPbPbCen3050:
   multi:
     data:
       nperiods: 1
-      maxfilesunp : [2]
-      maxfilesskim : [2]
+      maxfiles : [-1]
       chunksizeunp : [1]
       chunksizeskim: [1]
       fracmerge : [0.1]
@@ -73,8 +72,7 @@ LctopK0sPbPbCen3050:
       pkl_skimmed_merge_for_ml_all: datapklskimmedallperiods
     mc:
       nperiods: 1
-      maxfilesunp : [10]
-      maxfilesskim : [10]
+      maxfiles : [-1]
       chunksizeunp : [1]
       chunksizeskim: [1]
       fracmerge : [1.0]

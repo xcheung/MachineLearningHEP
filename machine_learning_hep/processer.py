@@ -22,21 +22,42 @@ import random as rd
 import uproot
 import pandas as pd
 import numpy as np
-from machine_learning_hep.listfiles import list_files_dir_lev2
 from machine_learning_hep.selectionutils import selectfidacc
 from machine_learning_hep.bitwise import filter_bit_df, tag_bit_df
 from utilities import selectdfquery, selectdfrunlist, merge_method
-
+from utilities import list_folders, appendfiletolist, appendmainfoldertolist
+from utilities import create_folder_struc
 class Processer: # pylint: disable=too-many-instance-attributes
     # Class Attribute
     species = 'processer'
 
     # Initializer / Instance Attributes
-    # pylint: disable=too-many-statements
-    def __init__(self, datap, run_param, mcordata):
+    # pylint: disable=too-many-statements, too-many-arguments
+    def __init__(self, datap, run_param, mcordata, p_maxfiles,
+                 d_root, d_pkl, d_pklsk, d_pkl_ml, p_period,
+                 p_chunksizeunp, p_chunksizeskim, p_maxprocess,
+                 p_frac_merge, p_rd_merge):
+
+        #directories
+        self.d_root = d_root
+        self.d_pkl = d_pkl
+        self.d_pklsk = d_pklsk
+        self.d_pkl_ml = d_pkl_ml
 
         self.datap = datap
         self.mcordata = mcordata
+        self.p_frac_merge = p_frac_merge
+        self.p_rd_merge = p_rd_merge
+        self.period = p_period
+        self.runlist = run_param[self.period]
+
+        self.p_maxfiles = p_maxfiles
+        self.p_chunksizeunp = p_chunksizeunp
+        self.p_chunksizeskim = p_chunksizeskim
+
+        #parameter names
+        self.p_maxprocess = p_maxprocess
+        self.indexsample = None
 
         #namefile root
         self.n_root = datap["files_names"]["namefile_unmerged_tree"]
@@ -51,11 +72,6 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.n_evtorig = datap["files_names"]["namefile_evtorig"]
         self.n_gen = datap["files_names"]["namefile_gen"]
 
-        #directories
-        self.d_root = None
-        self.d_pkl = None
-        self.d_pklsk = None
-        self.d_pkl_ml = None
 
         #selections
         self.s_reco_unp = datap["sel_reco_unp"]
@@ -86,6 +102,8 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.v_ismcbkg = datap["bitmap_sel"]["var_ismcbkg"]
 
         #list of files names
+
+        self.l_path = None
         self.l_root = None
         self.l_reco = None
         self.l_gen = None
@@ -95,96 +113,32 @@ class Processer: # pylint: disable=too-many-instance-attributes
         self.l_gensk = None
         self.l_evtsk = None
 
-        self.p_frac_merge = None
-        self.p_rd_merge = None
-        self.period = None
-        self.runlist = None
-
-        self.p_maxfilesunp = None
-        self.p_maxfilesskim = None
-        self.p_chunksizeunp = None
-        self.p_chunksizeskim = None
-
-
-        #parameter names
-        self.p_maxprocess = 1
-        self.indexsample = None
-
-
         #list of output names
         self.o_reco_ml = None
         self.o_gen_ml = None
         self.o_evt_ml = None
         self.o_evtorig_ml = None
 
-    def set_dir_root(self, d_root):
-        self.d_root = d_root
+        self.buildlists()
 
-    def set_dir_pkl(self, d_pkl):
-        self.d_pkl = d_pkl
+    def buildlists(self):
+        self.l_path = list_folders(self.d_root, self.n_root, self.p_maxfiles)
+        self.l_root = appendfiletolist(self.l_path, self.n_root)
+        self.l_reco = appendfiletolist(self.l_path, self.n_reco)
+        self.l_recosk = appendfiletolist(self.l_path, self.n_reco)
+        self.l_evt = appendfiletolist(self.l_path, self.n_evt)
+        self.l_evtorig = appendfiletolist(self.l_path, self.n_evtorig)
+        self.l_root = appendmainfoldertolist(self.l_root, self.d_root)
+        self.l_reco = appendmainfoldertolist(self.l_reco, self.d_pkl)
+        self.l_recosk = appendmainfoldertolist(self.l_recosk, self.d_pklsk)
+        self.l_evt = appendmainfoldertolist(self.l_evt, self.d_pkl)
+        self.l_evtorig = appendmainfoldertolist(self.l_evtorig, self.d_pkl)
 
-    def set_dir_pklsk(self, d_pklsk):
-        self.d_pklsk = d_pklsk
-
-    def set_dir_pklml(self, d_pkl_ml):
-        self.d_pkl_ml = d_pkl_ml
-        print(self.d_pkl_ml)
-
-    def set_frac_merge(self, frac_merge):
-        self.p_frac_merge = frac_merge
-
-    def set_rd_merge(self, rd_merge):
-        self.p_rd_merge = rd_merge
-
-    def set_period(self, period):
-        self.period = period
-
-    def set_maxfilesunp(self, maxfilesunp):
-        self.p_maxfilesunp = maxfilesunp
-    def set_maxfilesskim(self, maxfilesskim):
-        self.p_maxfilesskim = maxfilesskim
-    def set_chunksizeunp(self, chunksizeunp):
-        self.p_chunksizeunp = chunksizeunp
-    def set_chunksizeskim(self, chunksizeskim):
-        self.p_chunksizeskim = chunksizeskim
-
-    def get_reco_ml_merged(self):
-        return self.o_reco_ml
-
-    def get_gen_ml_merged(self):
-        return self.o_gen_ml
-
-    def get_evt_ml_merged(self):
-        return self.o_evt_ml
-
-    def get_evtorig_ml_merged(self):
-        return self.o_evtorig_ml
-
-    def buildlistpkl(self):
-        self.l_root, self.l_reco = list_files_dir_lev2(self.d_root, \
-                                        self.d_pkl, self.n_root, self.n_reco)
-        _, self.l_evt = list_files_dir_lev2(self.d_root, self.d_pkl, \
-                                                 self.n_root, self.n_evt)
-        _, self.l_evtorig = list_files_dir_lev2(self.d_root, self.d_pkl, \
-                                                self.n_root, self.n_evtorig)
-
-        self.l_root = self.l_root[:self.p_maxfilesunp]
-        self.l_reco = self.l_reco[:self.p_maxfilesunp]
-        self.l_evt = self.l_evt[:self.p_maxfilesunp]
-        self.l_evtorig = self.l_evtorig[:self.p_maxfilesunp]
-        if (self.mcordata == "mc"):
-            _, self.l_gen = list_files_dir_lev2(self.d_root, self.d_pkl, \
-                                        self.n_root, self.n_gen)
-            self.l_gen = self.l_gen[:self.p_maxfilesunp]
-
-    def buildlistpklskim(self):
-        _, self.l_recosk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
-                                               self.n_reco, self.n_reco)
-        self.l_recosk = self.l_recosk[:self.p_maxfilesskim]
-        if (self.mcordata == "mc"):
-            _, self.l_gensk = list_files_dir_lev2(self.d_pkl, self.d_pklsk, \
-                                                  self.n_gen, self.n_gen)
-            self.l_gensk = self.l_gensk[:self.p_maxfilesskim]
+        if self.mcordata == "mc":
+            self.l_gen = appendfiletolist(self.l_path, self.n_gen)
+            self.l_gensk = appendfiletolist(self.l_path, self.n_gen)
+            self.l_gen = appendmainfoldertolist(self.l_gen, self.d_pkl)
+            self.l_gensk = appendmainfoldertolist(self.l_gensk, self.d_pklsk)
 
     def unpack(self, file_index):
         treeevtorig = uproot.open(self.l_root[file_index])[self.n_treeevt]
@@ -249,13 +203,12 @@ class Processer: # pylint: disable=too-many-instance-attributes
             pool.close()
 
     def process_unpack_par(self):
-        self.buildlistpkl()
+        create_folder_struc(self.d_pkl, self.l_path)
         arguments = [(i,) for i in range(len(self.l_root))]
         self.parallelizer(self.unpack, arguments, self.p_chunksizeunp)
 
     def process_skim_par(self):
-        self.buildlistpkl()
-        self.buildlistpklskim()
+        create_folder_struc(self.d_pklsk, self.l_path)
         arguments = [(i,) for i in range(len(self.l_reco))]
         self.parallelizer(self.skim, arguments, self.p_chunksizeskim)
 
@@ -282,6 +235,4 @@ class Processer: # pylint: disable=too-many-instance-attributes
             merge_method(list_sel_gensk, self.o_gen_ml)
 
     def process_merge(self):
-        self.buildlistpkl()
-        self.buildlistpklskim()
         self.merge()

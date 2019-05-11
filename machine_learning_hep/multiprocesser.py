@@ -18,7 +18,7 @@ main script for doing data processing, machine learning and analysis
 import os
 from processer import Processer
 from utilities import merge_method
-class MultiProcesser:
+class MultiProcesser: # pylint: disable=too-many-instance-attributes
     species = "multiprocesser"
     def __init__(self, datap, run_param, mcordata):
         self.datap = datap
@@ -35,8 +35,7 @@ class MultiProcesser:
         self.p_seedmerge = datap["multi"][self.mcordata]["seedmerge"]
         self.p_fracmerge = datap["multi"][self.mcordata]["fracmerge"]
 
-        self.p_maxfilesunp = datap["multi"][self.mcordata]["maxfilesunp"]
-        self.p_maxfilesskim = datap["multi"][self.mcordata]["maxfilesskim"]
+        self.p_maxfiles = datap["multi"][self.mcordata]["maxfiles"]
         self.p_chunksizeunp = datap["multi"][self.mcordata]["chunksizeunp"]
         self.p_chunksizeskim = datap["multi"][self.mcordata]["chunksizeskim"]
 
@@ -50,14 +49,13 @@ class MultiProcesser:
         self.o_reco_merged = None
 
     def multi_unpack(self, indexp):
-        myprocess = Processer(self.datap, self.run_param, self.mcordata)
-        myprocess.set_dir_root(self.d_root_all[indexp])
-        myprocess.set_dir_pkl(self.d_pkl_all[indexp])
-        myprocess.set_frac_merge(self.p_fracmerge[indexp])
-        myprocess.set_rd_merge(self.p_fracmerge[indexp])
-        myprocess.set_maxfilesunp(self.p_maxfilesunp[indexp])
-        myprocess.set_chunksizeunp(self.p_chunksizeunp[indexp])
-        myprocess.set_period(self.p_period[indexp])
+        myprocess = Processer(self.datap, self.run_param, self.mcordata,
+                              self.p_maxfiles[indexp], self.d_root_all[indexp],
+                              self.d_pkl_all[indexp], self.d_pklsk_all[indexp],
+                              self.d_pklml_all[indexp],
+                              self.p_period[indexp], self.p_chunksizeunp[indexp],
+                              self.p_chunksizeskim[indexp], 30,
+                              self.p_fracmerge[indexp], self.p_seedmerge[indexp])
         myprocess.process_unpack_par()
 
     def multi_unpack_allperiods(self):
@@ -65,12 +63,13 @@ class MultiProcesser:
             self.multi_unpack(i)
 
     def multi_skim(self, indexp):
-        myprocess = Processer(self.datap, self.run_param, self.mcordata)
-        myprocess.set_dir_root(self.d_root_all[indexp])
-        myprocess.set_dir_pkl(self.d_pkl_all[indexp])
-        myprocess.set_dir_pklsk(self.d_pklsk_all[indexp])
-        myprocess.set_maxfilesskim(self.p_maxfilesskim[indexp])
-        myprocess.set_chunksizeskim(self.p_chunksizeskim[indexp])
+        myprocess = Processer(self.datap, self.run_param, self.mcordata,
+                              self.p_maxfiles[indexp], self.d_root_all[indexp],
+                              self.d_pkl_all[indexp], self.d_pklsk_all[indexp],
+                              self.d_pklml_all[indexp],
+                              self.p_period[indexp], self.p_chunksizeunp[indexp],
+                              self.p_chunksizeskim[indexp], 30,
+                              self.p_fracmerge[indexp], self.p_seedmerge[indexp])
         myprocess.process_skim_par()
 
     def multi_skim_allperiods(self):
@@ -78,13 +77,13 @@ class MultiProcesser:
             self.multi_skim(i)
 
     def multi_merge(self, indexp):
-        myprocess = Processer(self.datap, self.run_param, self.mcordata)
-        myprocess.set_dir_root(self.d_root_all[indexp])
-        myprocess.set_dir_pkl(self.d_pkl_all[indexp])
-        myprocess.set_dir_pklsk(self.d_pklsk_all[indexp])
-        myprocess.set_dir_pklml(self.d_pklml_all[indexp])
-        myprocess.set_frac_merge(self.p_fracmerge[indexp])
-        myprocess.set_rd_merge(self.p_seedmerge[indexp])
+        myprocess = Processer(self.datap, self.run_param, self.mcordata,
+                              self.p_maxfiles[indexp], self.d_root_all[indexp],
+                              self.d_pkl_all[indexp], self.d_pklsk_all[indexp],
+                              self.d_pklml_all[indexp],
+                              self.p_period[indexp], self.p_chunksizeunp[indexp],
+                              self.p_chunksizeskim[indexp], 30,
+                              self.p_fracmerge[indexp], self.p_seedmerge[indexp])
         myprocess.process_merge()
 
     def multi_merge_allperiods(self):
