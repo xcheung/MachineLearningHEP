@@ -15,7 +15,7 @@
 """
 main script for doing data processing, machine learning and analysis
 """
-import time
+import os
 import yaml
 from multiprocesser import MultiProcesser  # pylint: disable=import-error
 
@@ -29,10 +29,36 @@ def doprocesser():
         run_param = yaml.load(runlist_config)
         case = data_config["case"]
 
-    for i in range(data_param[case]["multi"]["mc"]["nperiods"]):
-        mymultiprocess_mc = MultiProcesser(data_param[case], run_param, "mc")
-        mymultiprocess_mc.multi_unpack(i)
-        mymultiprocess_mc.multi_skim(i)
-        mymultiprocess_mc.multi_merge(i)
-    mymultiprocess_mc.multi_merge_allinone()
+    mcordata = "mc"
+    doconversion = 1
+    doskim = 1
+    domerge = 1
+    domergeinone = 1
+
+    dirpkl = data_param[case]["multi"][mcordata]["pkl"]
+    dirpklsk = data_param[case]["multi"][mcordata]["pkl_skimmed"]
+    dirpklml = data_param[case]["multi"][mcordata]["pkl_skimmed_merge_for_ml"]
+    dirpklmltot = data_param[case]["multi"][mcordata]["pkl_skimmed_merge_for_ml_all"]
+
+    for i in range(data_param[case]["multi"][mcordata]["nperiods"]):
+        if not os.path.exists(dirpkl[i]):
+            os.makedirs(dirpkl[i])
+        if not os.path.exists(dirpklsk[i]):
+            os.makedirs(dirpklsk[i])
+        if not os.path.exists(dirpklml[i]):
+            os.makedirs(dirpklml[i])
+    if not os.path.exists(dirpklmltot):
+        os.makedirs(dirpklmltot)
+
+    mymultiprocess = MultiProcesser(data_param[case], run_param, mcordata)
+
+    for i in range(data_param[case]["multi"][mcordata]["nperiods"]):
+        if doconversion == 1:
+            mymultiprocess.multi_unpack(i)
+        if doskim == 1:
+            mymultiprocess.multi_skim(i)
+        if domerge == 1:
+            mymultiprocess.multi_merge(i)
+    if domergeinone == 1:
+        mymultiprocess.multi_merge_allinone()
 doprocesser()
